@@ -708,36 +708,38 @@
             sampling budget and the maximum number of turns.
           </p>
 
-          <div class="figure-container">
-            <img
-              src="assets/ablation.png"
-              alt="Ablation study on VerilogEval v2 pass@1: SFT yields the largest gain (+19.2% on 4B, +22.0% on 9B); single-agent RL and multi-agent RL contribute a further 1.4–6.5%; multi-agent without backtracking causes an unexpected drop of 11.6–14.3%; introducing backtracking rebounds by 16–18.6%."
-              class="figure-image"
-              loading="lazy"
-              decoding="async"
-            />
-            <p class="figure-caption">
-              <strong>Ablation study on VerilogEval v2 pass@1</strong> &mdash; tracing each technique and
-              training stage. <em>BT</em> = Backtracking. Note the
-              <span class="hl-red">−11.6% drop</span> from naive multi-agent (no BT), and the
-              <span class="hl-result">+16–18.6% rebound</span> once BT is enabled.
-            </p>
-          </div>
+          <div class="figure-row figure-row-46-50">
+            <div class="figure-container">
+              <img
+                src="assets/ablation.png"
+                alt="Ablation study on VerilogEval v2 pass@1: SFT yields the largest gain (+19.2% on 4B, +22.0% on 9B); single-agent RL and multi-agent RL contribute a further 1.4–6.5%; multi-agent without backtracking causes an unexpected drop of 11.6–14.3%; introducing backtracking rebounds by 16–18.6%."
+                class="figure-image"
+                loading="lazy"
+                decoding="async"
+              />
+              <p class="figure-caption">
+                <strong>Ablation study on VerilogEval v2 pass@1</strong> &mdash; tracing each technique
+                and training stage. <em>BT</em> = Backtracking. Note the
+                <span class="hl-red">−11.6% drop</span> from naive multi-agent (no BT), and the
+                <span class="hl-result">+16–18.6% rebound</span> once BT is enabled.
+              </p>
+            </div>
 
-          <div class="figure-container">
-            <img
-              src="assets/workflow_heatmap.png"
-              alt="Heatmap of accuracy as a function of per-turn sampling budget N and maximum number of turns T, with peak at N=3 / T=3."
-              class="figure-image"
-              loading="lazy"
-              decoding="async"
-            />
-            <p class="figure-caption">
-              <strong>Workflow design exploration on
-              <span class="hl-model">ChipMATE-4B</span>.</strong> Accuracy does not increase
-              monotonically with either factor; <em>Best-of-3</em> with <em>T = 3</em> achieves the peak
-              (<span class="hl-num">75.6</span> pass@1) at minimal inference cost.
-            </p>
+            <div class="figure-container">
+              <img
+                src="assets/workflow_heatmap.png"
+                alt="Heatmap of accuracy as a function of per-turn sampling budget N and maximum number of turns T, with peak at N=3 / T=3."
+                class="figure-image"
+                loading="lazy"
+                decoding="async"
+              />
+              <p class="figure-caption">
+                <strong>Workflow design exploration on
+                <span class="hl-model">ChipMATE-4B</span>.</strong> Accuracy does not increase
+                monotonically with either factor; <em>Best-of-3</em> with <em>T = 3</em> achieves the
+                peak (<span class="hl-num">75.6</span> pass@1) at minimal inference cost.
+              </p>
+            </div>
           </div>
 
           <div class="results-content" style="margin-top: 60px">

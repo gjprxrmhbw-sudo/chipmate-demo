@@ -5,7 +5,7 @@
     'use strict';
 
     const NAVBAR_OFFSET = 60;
-    const TOC_BREAKPOINT = 1500;
+    const TOC_BREAKPOINT = 1199;
     const SHARE_TITLE = 'ChipMATE: Multi-Agent Training via Reinforcement Learning for Enhanced RTL Generation';
     const FALLBACK_URL = 'https://chipmate.picasso-lab.com';
 

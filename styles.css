@@ -1321,8 +1321,30 @@ sub, sup {
 /* ============================================
    Responsive
    ============================================ */
-@media (max-width: 1500px) {
+@media (max-width: 1199px) {
     .toc-sidebar { display: none; }
+}
+
+/* When TOC is visible (>= 1200), shrink container so it doesn't overlap. */
+@media (min-width: 1200px) and (max-width: 1499px) {
+    .container { max-width: 1000px; }
+    .top-navbar .container { max-width: 1200px; }
+}
+
+/* Side-by-side figure rows (paper-style minipage 0.46/0.50 split). */
+.figure-row {
+    display: grid;
+    grid-template-columns: 0.46fr 0.50fr;
+    gap: 28px;
+    align-items: start;
+    margin: 36px 0;
+}
+
+.figure-row .figure-container { margin: 0; }
+.figure-row .figure-image { border-radius: var(--radius-sm); }
+
+@media (max-width: 760px) {
+    .figure-row { grid-template-columns: 1fr; gap: 24px; }
 }
 
 @media (max-width: 968px) {
