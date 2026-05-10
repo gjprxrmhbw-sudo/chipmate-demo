@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChipMATE: Multi-Agent Training via Reinforcement Learning for Enhanced RTL Generation</title>
+    <meta
+      name="description"
+      content="ChipMATE is the first self-trained multi-agent framework for RTL generation. A Verilog agent and a Python reference-model agent cross-verify each other without any golden testbench, achieving 75.0% / 80.1% pass@1 on VerilogEval V2 with 4B/9B base models — outperforming DeepSeek V4 (1.6T)."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="ChipMATE: Multi-Agent Training via Reinforcement Learning for Enhanced RTL Generation" />
+    <meta
+      property="og:description"
+      content="A self-trained multi-agent framework for RTL generation. Two agents cross-verify without any golden oracle. 4B/9B models outperform 1.6T-parameter DeepSeek V4."
+    />
+    <meta property="og:image" content="assets/4_overview.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ChipMATE: Multi-Agent Training via RL for Enhanced RTL Generation" />
+    <meta
+      name="twitter:description"
+      content="Self-trained multi-agent RTL generation. 75.0% / 80.1% pass@1 on VerilogEval V2 with just 4B/9B parameters."
+    />
+    <meta name="twitter:image" content="assets/4_overview.png" />
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%2314b8a6'/%3E%3Cstop offset='1' stop-color='%230f766e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='14' y='14' width='36' height='36' rx='6' fill='url(%23g)'/%3E%3Cg fill='none' stroke='white' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M22 8v8M32 8v8M42 8v8M22 48v8M32 48v8M42 48v8M8 22h8M8 32h8M8 42h8M48 22h8M48 32h8M48 42h8'/%3E%3Crect x='24' y='24' width='16' height='16' rx='2' fill='white' fill-opacity='0.18'/%3E%3C/g%3E%3C/svg%3E"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <defs>
+        <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" opacity="0.25"/>
+          <rect x="6" y="6" width="12" height="12" rx="1.5"/>
+          <rect x="9" y="9" width="6" height="6" rx="0.5" fill="currentColor"/>
+          <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3"/>
+        </symbol>
+        <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" opacity="0.18"/>
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
+          <rect x="9" y="9" width="6" height="6" rx="1"/>
+          <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+        </symbol>
+        <symbol id="i-cross-verify" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5" cy="6" r="2.5" fill="currentColor"/>
+          <circle cx="19" cy="6" r="2.5" fill="currentColor" opacity="0.55"/>
+          <path d="M7.2 7.2 L16.8 16.8 M16.8 7.2 L7.2 16.8" opacity="0.6"/>
+          <circle cx="12" cy="20" r="3" fill="currentColor" opacity="0.18"/>
+          <path d="M10.5 20 L11.6 21.1 L13.8 18.9"/>
+        </symbol>
+        <symbol id="i-layers-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4.5" width="20" height="3.5" rx="1" fill="currentColor" opacity="0.25"/>
+          <rect x="2" y="10.25" width="14" height="3.5" rx="1" fill="currentColor" opacity="0.55"/>
+          <rect x="2" y="16" width="8" height="3.5" rx="1" fill="currentColor" opacity="0.95"/>
+        </symbol>
+        <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3" fill="currentColor" opacity="0.22"/>
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+          <path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6" opacity="0.65"/>
+        </symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16M3 12a9 9 0 0 1 15.5-6.36L21 8"/>
+          <path d="M3 22v-6h6" opacity="0.6"/>
+          <path d="M21 2v6h-6" opacity="0.6"/>
+        </symbol>
+        <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6" opacity="0.4"/>
+          <line x1="3" y1="12" x2="21" y2="12" opacity="0.4"/>
+          <line x1="3" y1="18" x2="21" y2="18" opacity="0.4"/>
+          <circle cx="16" cy="6" r="2.5" fill="currentColor"/>
+          <circle cx="8" cy="12" r="2.5" fill="currentColor"/>
+          <circle cx="18" cy="18" r="2.5" fill="currentColor"/>
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </symbol>
+        <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </symbol>
+        <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></symbol>
+        <symbol id="i-linkedin" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></symbol>
+      </defs>
+    </svg>
+
+    <nav class="top-navbar" aria-label="Primary">
+      <div class="container">
+        <div class="nav-items">
+          <a href="#" class="nav-pill active">ChipMATE</a>
+          <a href="https://anonymous.4open.science/r/ChipMATE-anon" class="nav-pill" target="_blank" rel="noopener">Code</a>
+          <a href="#method" class="nav-pill">Method</a>
+          <a href="#results" class="nav-pill">Results</a>
+          <a href="#ablation" class="nav-pill">Ablation</a>
+        </div>
+      </div>
+    </nav>
+
+    <aside class="toc-sidebar" id="tocSidebar" aria-label="Table of contents">
+      <div class="toc-content" id="tocContent">
+        <h3>Table of Contents</h3>
+        <nav aria-label="Section navigation">
+          <a href="#introduction">Introduction</a>
+          <a href="#method">Method</a>
+          <a href="#workflow">Cross-Verification</a>
+          <a href="#training">Two-Stage Training</a>
+          <a href="#datagen">Data Generation</a>
+          <a href="#results">Results</a>
+          <a href="#ablation">Ablation</a>
+          <a href="#share">Share</a>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="main-container" id="main-content">
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-header">
+            <div class="logo-title-wrapper">
+              <div class="logo-icon">
+                <svg class="logo-svg" aria-hidden="true"><use href="#i-chip"/></svg>
+              </div>
+              <h1 class="logo-text">ChipMATE</h1>
+            </div>
+            <h2 class="subtitle">
+              Multi-Agent Training via Reinforcement Learning for Enhanced <em>RTL</em> Generation
+            </h2>
+          </div>
+
+          <div class="action-buttons">
+            <a href="https://anonymous.4open.science/r/ChipMATE-anon" class="action-btn" target="_blank" rel="noopener">
+              <svg class="btn-icon" aria-hidden="true"><use href="#i-github"/></svg> Code
+            </a>
+            <a href="#results" class="action-btn">
+              <svg class="btn-icon" aria-hidden="true"><use href="#i-trending-up"/></svg> Results
+            </a>
+            <a href="#method" class="action-btn">
+              <svg class="btn-icon" aria-hidden="true"><use href="#i-cpu"/></svg> Method
+            </a>
+          </div>
+
+          <p class="abstract-text">
+            Existing API-based agentic systems for <span class="hl-term">RTL code generation</span> are
+            fundamentally misaligned with industrial practice: they assume a <em>golden testbench</em> at
+            generation time, depend on closed-source APIs incompatible with chip vendors'
+            <span class="hl-term">air-gapped security</span> requirements, and cannot be trained on
+            vendors' proprietary RTL codebases. We present <span class="hl-model">ChipMATE</span>, the
+            <strong>first self-trained multi-agent framework</strong> for RTL generation. Inspired by
+            industrial practice — where correctness emerges from cross-comparison between independently
+            written RTL modules and reference models — <span class="hl-model">ChipMATE</span> pairs a
+            <span class="hl-blue">Verilog agent</span> with a <span class="hl-blue">Python reference-model
+            agent</span> that <em>mutually verify</em> each other's outputs without any golden oracle. With
+            a <span class="hl-term">backtrack-based inference workflow</span> and a
+            <span class="hl-term">two-stage training pipeline</span>, <span class="hl-model">ChipMATE</span>
+            achieves <span class="hl-num">75.0%</span> and <span class="hl-num">80.1%</span> pass@1 on
+            <span class="hl-model">VerilogEval V2</span> with <span class="hl-num">4B</span> and
+            <span class="hl-num">9B</span> base models — outperforming <em>all</em> existing self-trained
+            models and even <span class="hl-model">DeepSeek V4</span>
+            (<span class="hl-num">1600B</span> parameters).
+          </p>
+
+          <div class="hero-figure">
+            <img
+              src="assets/4_overview.png"
+              alt="ChipMATE overview: a Verilog agent and a Python reference-model agent cross-verify each other through a backtrack-based inference workflow, trained in two stages with a hybrid data generation framework."
+              fetchpriority="high"
+              decoding="async"
+            />
+            <p class="figure-caption">
+              <strong>Overview of ChipMATE.</strong> (a) A multi-agent cross-verification workflow with a
+              backtrack mechanism. (b) The two-stage training pipeline, complemented by a hybrid
+              reference-model data generation framework.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="introduction" class="content-section">
+        <div class="container">
+          <h2 class="section-title">Introduction</h2>
+          <div class="intro-content">
+            <p>
+              <span class="hl-model">LLMs</span> excel at general-purpose programming but struggle with
+              <span class="hl-term">Register-Transfer Level (RTL)</span> code generation, a cornerstone of
+              modern chip design — largely due to the scarcity of high-quality RTL data in public corpora.
+              Recent agentic workflows like <span class="hl-model">MAGE</span> and
+              <span class="hl-model">VerilogCoder</span> orchestrate LLMs through task decomposition and
+              iterative self-correction, achieving promising results on academic benchmarks.
+            </p>
+            <p>
+              Despite these advances, current agentic RTL pipelines are
+              <span class="hl-red">fundamentally misaligned</span> with industrial chip-design practice in
+              three coupled ways:
+            </p>
+
+            <ul class="key-points">
+              <li>
+                <strong>No golden testbench in production</strong> &mdash; In real chip vendors,
+                testbenches are written by dedicated <em>verification engineers</em> after the RTL, not
+                before. Even when one exists, it is often imperfect — <em>not</em> a reliable oracle.
+              </li>
+              <li>
+                <strong>API-LLMs conflict with security posture</strong> &mdash; RTL is treated as
+                <em>first-class IP</em>; core development servers are <span class="hl-term">air-gapped</span>
+                to prevent any data leakage to third-party endpoints.
+              </li>
+              <li>
+                <strong>Internal codebases sit unused</strong> &mdash; Years of production-grade RTL —
+                far superior to any public training data — remain entirely unused because API-based LLMs
+                cannot be fine-tuned on proprietary code.
+              </li>
+            </ul>
+
+            <p>
+              Recent self-trained models (<span class="hl-model">QiMeng-CodeV-R1</span>,
+              <span class="hl-model">RTLSeek</span>) remove the API dependency, but generate code in a
+              <em>single turn</em>: no mechanism to check or correct their own output. This is unsurprising —
+              even a senior design engineer rarely writes correct RTL on the first attempt. The chip
+              industry solves this through a <span class="hl-term">cross-verification workflow</span>:
+              design engineers write RTL while verification engineers <em>independently</em> implement a
+              reference model in a high-level language; neither side is assumed correct, and the two
+              iteratively compare outputs until the design is verified.
+            </p>
+
+            <div class="highlight-box">
+              <p>
+                <strong>This industrial workflow directly inspires
+                <span class="hl-model">ChipMATE</span></strong>: a multi-agent system where one agent
+                generates <em>Verilog</em> in the role of a design engineer and another generates a
+                <em>Python reference model</em> in the role of a verification engineer. The two agents
+                iteratively cross-verify each other to produce high-quality RTL code.
+              </p>
+            </div>
+
+            <h3 class="subsection-title">Three Challenges</h3>
+            <ul class="key-points">
+              <li>
+                <strong>(C1) Error propagation without a golden oracle</strong> &mdash; A mismatch between
+                agents does not reveal which side is wrong. Naively asking one agent to "correct" the
+                other <span class="hl-red">compounds errors turn by turn</span>, producing worse results
+                than a single-model baseline.
+              </li>
+              <li>
+                <strong>(C2) Weak individual capability</strong> &mdash; Off-the-shelf
+                <span class="hl-model">Qwen3.5-4B/9B</span> achieve below <span class="hl-num">45%</span>
+                on both Verilog and reference-model generation. Each agent's individual capability must be
+                strengthened <em>before</em> any meaningful collaboration can occur.
+              </li>
+              <li>
+                <strong>(C3) No training data for reference-model generation</strong> &mdash; Even
+                <span class="hl-model">DeepSeek-R1</span> achieves below <span class="hl-num">20%</span>
+                pass@1 when converting Verilog into Python reference models. Direct distillation is
+                impractical.
+              </li>
+            </ul>
+
+            <h3 class="subsection-title">Three Contributions</h3>
+            <ul class="key-points">
+              <li>
+                <strong>Cross-verification multi-agent workflow (C1)</strong> &mdash; A
+                <span class="hl-term">backtrack mechanism</span> that automatically reverts to a previous
+                turn whenever the current turn produces worse results — preventing error compounding.
+              </li>
+              <li>
+                <strong>Two-stage training pipeline (C2)</strong> &mdash; Stage 1 trains each agent
+                <em>separately</em> with SFT + RL to saturate individual capability; Stage 2 trains the
+                team <em>jointly</em> with our <span class="hl-term">X-GRPO</span> algorithm to learn
+                collaboration.
+              </li>
+              <li>
+                <strong>Hybrid data-generation framework (C3)</strong> &mdash; Combines API distillation,
+                <span class="hl-term">IR-based AST conversion</span>, and category-specific augmentation to
+                produce <span class="hl-num">64.4K</span> high-quality reference-model samples — at a
+                fraction of pure-API cost.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="method" class="content-section bg-light">
+        <div class="container">
+          <h2 class="section-title">
+            <strong>ChipMATE</strong>: Three Components
+          </h2>
+
+          <div class="system-overview">
+            <div class="system-description">
+              <div class="agent-cards">
+                <div class="agent-card">
+                  <div class="agent-icon">
+                    <svg class="agent-svg" aria-hidden="true"><use href="#i-cross-verify"/></svg>
+                  </div>
+                  <h4>Cross-Verification Workflow</h4>
+                  <p>
+                    A <em>Verilog agent</em> and a <em>Python reference-model agent</em> mutually verify
+                    each other's outputs. A <span class="hl-term">backtrack mechanism</span> reverts to
+                    the last accepted turn whenever the current turn does not strictly improve the match
+                    rate.
+                  </p>
+                </div>
+                <div class="agent-card">
+                  <div class="agent-icon">
+                    <svg class="agent-svg" aria-hidden="true"><use href="#i-layers-3"/></svg>
+                  </div>
+                  <h4>Two-Stage Training Pipeline</h4>
+                  <p>
+                    <em>Stage 1</em>: each agent is trained separately with SFT + RL to saturate
+                    individual capability. <em>Stage 2</em>: both agents are trained <em>jointly</em>
+                    with our <span class="hl-term">X-GRPO</span> algorithm to learn collaboration.
+                  </p>
+                </div>
+                <div class="agent-card">
+                  <div class="agent-icon">
+                    <svg class="agent-svg" aria-hidden="true"><use href="#i-database"/></svg>
+                  </div>
+                  <h4>Hybrid Data Generation</h4>
+                  <p>
+                    Combines <em>API distillation</em>, <em>IR-level conversion</em>, and
+                    <em>category-specific augmentation</em> to produce
+                    <span class="hl-num">64.4K</span> verified Python reference-model samples for
+                    training.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="workflow" class="content-section">
+        <div class="container">
+          <h2 class="section-title">Cross-Verification Workflow</h2>
+
+          <p class="results-intro">
+            Two agents independently generate <em>N</em> candidate implementations from the same
+            specification. A cross-language comparison tool simulates both on
+            <span class="hl-num">1000</span> random stimuli; if outputs disagree, each agent self-corrects
+            over multiple turns &mdash; <em>without</em> ever seeing the other agent's code.
+          </p>
+
+          <div class="two-column-layout">
+            <div class="column-text">
+              <h3><span class="hl-num">(1)</span> Backtrack Mechanism</h3>
+              <p>
+                A correction is accepted <em>only if</em> it strictly improves the match rate; otherwise
+                the agent <em>reverts</em> to its last accepted version. This prevents the agent from
+                <span class="hl-red">drifting into worse states</span> turn over turn — a failure mode
+                that single-pass multi-agent setups suffer from naively.
+              </p>
+            </div>
+            <div class="column-text">
+              <h3><span class="hl-num">(2)</span> Waveform → Natural Language</h3>
+              <p>
+                Raw waveform mismatches are unparseable for LLMs. We build a converter that locates the
+                <em>first divergent cycle</em> and packages the surrounding I/O context into a structured
+                description the agent can directly act upon — bridging the
+                <span class="hl-term">low-level cycle-accurate world</span> and the
+                <span class="hl-term">natural-language reasoning world</span>.
+              </p>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <h4>Prompt Design</h4>
+            <p>
+              We mirror the <em>combinational/sequential</em> separation found in standard RTL textbooks —
+              LLMs already partially internalize this from pretraining. Each prompt has four sections:
+              <em>code skeleton</em> (with module name and parameterized port list),
+              <em>combinational-logic guidelines</em> (latch avoidance, full-case coverage),
+              <em>sequential-logic guidelines</em> (reset handling, non-blocking conventions), and a
+              <em>few-shot example</em>. This structured prompt alone lifts first-attempt pass rate by
+              <span class="hl-num">1–5%</span> on frontier API models.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="training" class="content-section bg-light">
+        <div class="container">
+          <h2 class="section-title">Two-Stage Training Pipeline</h2>
+
+          <div class="figure-container">
+            <img
+              src="assets/4_xgrpo.png"
+              alt="X-GRPO trajectory sampling: standard GRPO collapses to group size 1 across multi-turn rollouts when dense per-turn rewards are used; X-GRPO restores meaningful group variance by sampling K candidates from each agent and pairing them index-wise into K×K candidate pairs."
+              class="figure-image"
+              loading="lazy"
+              decoding="async"
+            />
+            <p class="figure-caption">
+              <strong>(a)</strong> Standard <span class="hl-model">GRPO</span> collapses to group size
+              <span class="hl-num">1</span> across multi-turn rollouts when dense per-turn rewards are
+              used. <strong>(b) X-GRPO</strong> restores meaningful group variance: both agents
+              independently sample <em>K</em> candidates per turn, paired into
+              <span class="hl-num">K×K</span> candidate pairs. The best-scoring pair becomes the shared
+              prefix for the next turn.
+            </p>
+          </div>
+
+          <div class="intro-content">
+            <p>
+              After <span class="hl-term">Stage 1</span>, both agents already excel at their respective
+              code-generation tasks. <span class="hl-term">Stage 2</span> teaches them to
+              <em>collaborate</em>. When a mismatch arises, each agent must analyze the diagnostic
+              information, determine whether the fault lies in <em>its own</em> code or the
+              <em>other agent's</em>, and apply self-correction only when it identifies a genuine error
+              in its own implementation.
+            </p>
+
+            <h3 class="subsection-title">X-GRPO Trajectory Sampling</h3>
+            <p>
+              Standard <span class="hl-model">GRPO</span> is ill-suited to multi-turn multi-agent
+              settings: assigning a dense reward at the end of each turn collapses the effective group
+              size to <span class="hl-num">1</span> for every turn beyond the first. We propose
+              <span class="hl-term">X-GRPO</span>, drawing from <em>Tree-of-Thought</em> and
+              <em>AT-GRPO</em>, which restores meaningful within-group variance across turns by sampling
+              <span class="hl-num">K×K</span> candidate pairs and selecting the best as the shared
+              prefix.
+            </p>
+
+            <h3 class="subsection-title">Hierarchical Reward Design</h3>
+            <p>The per-agent reward has three components:</p>
+            <ul class="key-points">
+              <li>
+                <strong>Local reward (<em>R</em><sub>local</sub>)</strong> &mdash; Multi-tiered:
+                <code>{0, 0.1, 0.2, 0.2 + 0.8c}</code> for compile failure, runtime error, I/O port
+                mismatch, and partial pass rate <em>c</em>. Encourages syntactically correct, high-pass
+                code.
+              </li>
+              <li>
+                <strong>Correct-fix bonus (<em>R</em><sub>fix</sub>)</strong> &mdash; Sparse binary
+                reward for successfully resolving a previously mismatched stimulus. Withheld if both
+                agents agree on a <em>wrong</em> answer.
+              </li>
+              <li>
+                <strong>Team-match reward (<em>R</em><sub>match</sub>)</strong> &mdash; Dense reward
+                proportional to the overall match ratio between the two agents — a smooth gradient toward
+                mutual agreement.
+              </li>
+            </ul>
+            <p>
+              Aggregate: <code>R = δ<sub>local</sub>·R<sub>local</sub> + δ<sub>fix</sub>·R<sub>fix</sub>
+              + δ<sub>match</sub>·R<sub>match</sub></code>, with
+              <code>δ<sub>local</sub>=10</code>, <code>δ<sub>fix</sub>=0.2</code>,
+              <code>δ<sub>match</sub>=0.5</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="datagen" class="content-section">
+        <div class="container">
+          <h2 class="section-title">Hybrid Reference-Model Data Generation</h2>
+
+          <p class="results-intro">
+            No public Python reference-model dataset exists. We build a <em>three-pipeline</em> hybrid
+            framework yielding <span class="hl-num">64.4K</span> high-quality samples — at a fraction of
+            pure-API cost.
+          </p>
+
+          <div class="figure-container">
+            <img
+              src="assets/4_data_gen.png"
+              alt="Hybrid data generation framework: three pipelines combining LLM-API agentic distillation, IR-based AST-level conversion, and category-specific augmentation."
+              class="figure-image"
+              loading="lazy"
+              decoding="async"
+            />
+            <p class="figure-caption">
+              <strong>Hybrid data generation framework</strong> — combining <em>LLM-API distillation</em>,
+              <em>IR-based conversion</em>, and <em>category-specific augmentation</em> to produce the
+              reference-model training corpus.
+            </p>
+          </div>
+
+          <div class="agent-cards">
+            <div class="agent-card">
+              <div class="agent-icon">
+                <svg class="agent-svg" aria-hidden="true"><use href="#i-database"/></svg>
+              </div>
+              <h4>API Distillation (~25K)</h4>
+              <p>
+                Frontier LLM (<span class="hl-model">DeepSeek-R1</span>) generates Python references with
+                CoT, verified by our cross-language comparator. Cost: <span class="hl-num">$2,000+</span>
+                and <span class="hl-num">200+ hours</span> of compute, yielding only
+                <span class="hl-num">~25K</span> verified samples.
+              </p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-icon">
+                <svg class="agent-svg" aria-hidden="true"><use href="#i-refresh"/></svg>
+              </div>
+              <h4>IR-Based Conversion (~36K)</h4>
+              <p>
+                Deterministic AST-level pipeline using <span class="hl-model">PyVerilog</span>: parse →
+                behavioral lowering → top-module wrapping. <em>Cost-free</em>, completes in
+                <span class="hl-num">&lt;2 hours</span>, yields <span class="hl-num">~36K</span>
+                additional verified samples.
+              </p>
+            </div>
+            <div class="agent-card">
+              <div class="agent-icon">
+                <svg class="agent-svg" aria-hidden="true"><use href="#i-sliders"/></svg>
+              </div>
+              <h4>Targeted Augmentation (~3.4K)</h4>
+              <p>
+                After identifying weakness in <em>FSMs</em>, <em>multi-cycle protocol blocks</em>, and
+                <em>bit-level arithmetic</em>, we collect targeted Verilog examples and convert them via
+                the IR pipeline. Shifts these categories' share from
+                <span class="hl-num">~15%</span> to <span class="hl-num">28%</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="content-section bg-light">
+        <div class="container">
+          <h2 class="section-title">Experimental Results</h2>
+
+          <p class="results-intro">
+            We evaluate <span class="hl-model">ChipMATE</span> against large foundation
+            <span class="hl-model">LLMs</span> (<span class="hl-model">GPT-4o</span>,
+            <span class="hl-model">Claude Opus 4.7</span>, <span class="hl-model">DeepSeek V4</span>),
+            specialized models (<span class="hl-model">CodeV-R1</span>), and base
+            <span class="hl-model">Qwen3.5</span> on <em>four</em> benchmarks:
+            <span class="hl-model">VerilogEval v2</span>, <span class="hl-model">RTLLM v2</span>,
+            <span class="hl-model">ChipBench-SC</span>, and <span class="hl-model">CVDP cid03</span>.
+          </p>
+
+          <div class="benchmark-stats">
+            <div class="stat-box">
+              <div class="stat-number">75.0%</div>
+              <div class="stat-label">VerilogEval v2 / 4B</div>
+              <p>ChipMATE-Agents-4B pass@1</p>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">80.1%</div>
+              <div class="stat-label">VerilogEval v2 / 9B</div>
+              <p>ChipMATE-Agents-9B pass@1</p>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">1600B</div>
+              <div class="stat-label">DeepSeek V4 beaten</div>
+              <p>9B ChipMATE outperforms 1.6T DeepSeek V4</p>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">64.4K</div>
+              <div class="stat-label">Reference-model samples</div>
+              <p>Generated by our hybrid pipeline</p>
+            </div>
+          </div>
+
+          <div class="results-content" style="margin-top: 60px">
+            <h3 class="subsection-title">End-to-End Verilog Generation</h3>
+            <p class="results-intro">
+              pass@k (%) on four benchmarks against foundation LLMs (<span class="hl-num">20×–180×</span>
+              larger than us), specialized RTL models, and base models.
+            </p>
+
+            <div class="results-table-container">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">Type</th>
+                    <th rowspan="2" style="min-width: 180px">Model</th>
+                    <th rowspan="2">Size</th>
+                    <th colspan="2">VerilogEval v2</th>
+                    <th colspan="2">RTLLM v2</th>
+                    <th colspan="2">ChipBench-SC</th>
+                    <th colspan="2">CVDP cid03</th>
+                  </tr>
+                  <tr>
+                    <th>p@1</th><th>p@5</th><th>p@1</th><th>p@5</th>
+                    <th>p@1</th><th>p@5</th><th>p@1</th><th>p@5</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td rowspan="5" class="rowtype">Foundation</td><td>GPT-4o</td><td>—</td><td>64.1</td><td>73.7</td><td>56.5</td><td>70.3</td><td>20.0</td><td>33.3</td><td class="rank-3">39.0</td><td>40.4</td></tr>
+                  <tr><td>Claude Opus 4.7</td><td>—</td><td class="rank-1"><strong>86.9</strong></td><td class="rank-1"><strong>90.4</strong></td><td>64.8</td><td>68.0</td><td class="rank-3">31.3</td><td class="rank-1"><strong>46.7</strong></td><td class="rank-1"><strong>42.8</strong></td><td class="rank-1"><strong>47.9</strong></td></tr>
+                  <tr><td>DeepSeek Coder</td><td>236B</td><td>68.5</td><td>80.8</td><td>57.6</td><td>70.0</td><td>16.7</td><td>30.0</td><td>22.3</td><td>37.2</td></tr>
+                  <tr><td>DeepSeek V4</td><td>1.6T</td><td>67.3</td><td>80.1</td><td>58.8</td><td>66.0</td><td>18.0</td><td>36.7</td><td>21.5</td><td>34.6</td></tr>
+                  <tr><td>DeepSeek R1</td><td>671B</td><td class="rank-3">77.5</td><td class="rank-2"><u>84.7</u></td><td>64.7</td><td class="rank-3">75.8</td><td>26.7</td><td class="rank-3">40.0</td><td>27.7</td><td>42.1</td></tr>
+                  <tr><td rowspan="2" class="rowtype">Specialized</td><td>CodeV-R1 (distill)</td><td>7B</td><td>65.2</td><td>75.2</td><td>57.2</td><td>71.9</td><td>13.3</td><td>26.7</td><td>26.2</td><td>42.1</td></tr>
+                  <tr><td>CodeV-R1</td><td>7B</td><td>68.8</td><td>78.2</td><td>68.0</td><td class="rank-1"><strong>78.2</strong></td><td>30.0</td><td class="rank-3">40.0</td><td>26.8</td><td class="rank-3">43.3</td></tr>
+                  <tr><td rowspan="2" class="rowtype">Base</td><td>Qwen3.5-4B</td><td>4B</td><td>41.7</td><td>60.9</td><td>34.3</td><td>49.7</td><td>6.7</td><td>10.0</td><td>11.8</td><td>13.9</td></tr>
+                  <tr><td>Qwen3.5-9B</td><td>9B</td><td>48.5</td><td>66.6</td><td>36.1</td><td>57.8</td><td>13.3</td><td>20.0</td><td>13.3</td><td>21.5</td></tr>
+                  <tr class="our-row"><td rowspan="4" class="rowtype rowtype-ours">ChipMATE<br>(Ours)</td><td>ChipMATE-Verilog-4B</td><td>4B</td><td>67.4</td><td>71.8</td><td>68.0</td><td>74.6</td><td>26.7</td><td>33.3</td><td>24.7</td><td>39.2</td></tr>
+                  <tr class="our-row"><td>ChipMATE-Agents-4B</td><td>4B</td><td>75.0</td><td>76.3</td><td class="rank-2"><u>74.6</u></td><td class="rank-2"><u>77.3</u></td><td class="rank-2"><u>33.3</u></td><td class="rank-2"><u>43.3</u></td><td>32.1</td><td>41.3</td></tr>
+                  <tr class="our-row"><td>ChipMATE-Verilog-9B</td><td>9B</td><td>75.3</td><td>77.6</td><td class="rank-3">71.9</td><td class="rank-3">75.8</td><td>30.0</td><td>36.7</td><td>28.1</td><td>42.1</td></tr>
+                  <tr class="our-row best-row"><td><strong>ChipMATE-Agents-9B</strong></td><td><strong>9B</strong></td><td class="rank-2"><u><strong>80.1</strong></u></td><td class="rank-3"><strong>82.4</strong></td><td class="rank-1"><strong>75.8</strong></td><td class="rank-2"><u><strong>77.3</strong></u></td><td class="rank-1"><strong>36.7</strong></td><td class="rank-2"><u><strong>43.3</strong></u></td><td class="rank-2"><u><strong>40.4</strong></u></td><td class="rank-2"><u><strong>44.6</strong></u></td></tr>
+                </tbody>
+              </table>
+              <p class="table-caption">
+                <strong>Table 1.</strong> <span class="hl-model">ChipMATE-Agents-9B</span> achieves
+                <span class="hl-num">6.7%–13.6%</span> higher pass@1 than the previous SOTA self-trained
+                model (<span class="hl-model">CodeV-R1</span>), and outperforms <em>all</em> API-based
+                LLMs that are <span class="hl-num">20–180×</span> larger.
+              </p>
+            </div>
+          </div>
+
+          <div class="results-content" style="margin-top: 60px">
+            <h3 class="subsection-title">Python Reference-Model Generation</h3>
+            <p class="results-intro">
+              Even the <span class="hl-num">4B</span> ChipMATE-Python ranks
+              <span class="hl-result">2nd or higher across all benchmarks</span> — well above all
+              foundation models. Reference-model generation requires predicting cycle-accurate hardware
+              behavior; targeted fine-tuning on this specific task pays off dramatically.
+            </p>
+
+            <div class="results-table-container">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2">Type</th>
+                    <th rowspan="2" style="min-width: 180px">Model</th>
+                    <th rowspan="2">Size</th>
+                    <th colspan="2">VerilogEval v2</th>
+                    <th colspan="2">RTLLM v2</th>
+                    <th colspan="2">ChipBench-SC</th>
+                    <th colspan="2">CVDP cid03</th>
+                  </tr>
+                  <tr>
+                    <th>p@1</th><th>p@5</th><th>p@1</th><th>p@5</th>
+                    <th>p@1</th><th>p@5</th><th>p@1</th><th>p@5</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td rowspan="3" class="rowtype">Foundation</td><td>DeepSeek Coder</td><td>236B</td><td class="rank-3">60.1</td><td class="rank-3">73.1</td><td>42.4</td><td>50.0</td><td>28.7</td><td class="rank-3">40.0</td><td>21.5</td><td>35.1</td></tr>
+                  <tr><td>DeepSeek V4</td><td>1.6T</td><td>59.7</td><td>71.8</td><td>44.4</td><td>54.3</td><td class="rank-3">30.7</td><td class="rank-3">40.0</td><td>24.7</td><td>36.5</td></tr>
+                  <tr><td>DeepSeek R1</td><td>671B</td><td>57.1</td><td>70.7</td><td class="rank-3">49.6</td><td class="rank-3">57.8</td><td>28.7</td><td>36.7</td><td class="rank-3">26.2</td><td class="rank-3">37.2</td></tr>
+                  <tr><td rowspan="2" class="rowtype">Specialized</td><td>CodeV-R1 (distill)</td><td>7B</td><td>40.4</td><td>48.5</td><td>36.0</td><td>46.2</td><td>23.3</td><td>30.0</td><td>24.7</td><td class="rank-3">37.2</td></tr>
+                  <tr><td>CodeV-R1</td><td>7B</td><td>45.3</td><td>56.4</td><td>42.7</td><td>51.8</td><td>28.7</td><td>33.3</td><td>22.3</td><td>34.6</td></tr>
+                  <tr><td rowspan="2" class="rowtype">Base</td><td>Qwen3.5-4B</td><td>4B</td><td>46.8</td><td>63.7</td><td>38.2</td><td>46.1</td><td>16.7</td><td>23.3</td><td>10.2</td><td>12.7</td></tr>
+                  <tr><td>Qwen3.5-9B</td><td>9B</td><td>48.0</td><td>64.7</td><td>40.1</td><td>51.8</td><td>20.0</td><td>26.7</td><td>11.4</td><td>19.9</td></tr>
+                  <tr class="our-row"><td rowspan="2" class="rowtype rowtype-ours">ChipMATE<br>(Ours)</td><td>ChipMATE-Python-4B</td><td>4B</td><td class="rank-2"><u>77.6</u></td><td class="rank-2"><u>80.1</u></td><td class="rank-2"><u>75.3</u></td><td class="rank-2"><u>80.1</u></td><td class="rank-2"><u>41.3</u></td><td class="rank-2"><u>46.7</u></td><td class="rank-2"><u>34.2</u></td><td class="rank-2"><u>45.3</u></td></tr>
+                  <tr class="our-row best-row"><td><strong>ChipMATE-Python-9B</strong></td><td><strong>9B</strong></td><td class="rank-1"><strong>82.4</strong></td><td class="rank-1"><strong>83.5</strong></td><td class="rank-1"><strong>77.3</strong></td><td class="rank-1"><strong>81.3</strong></td><td class="rank-1"><strong>50.0</strong></td><td class="rank-1"><strong>53.3</strong></td><td class="rank-1"><strong>43.4</strong></td><td class="rank-1"><strong>49.4</strong></td></tr>
+                </tbody>
+              </table>
+              <p class="table-caption">
+                <strong>Table 2.</strong> <span class="hl-model">ChipMATE-Python-9B</span> achieves
+                <span class="hl-num">5.4%–15.2%</span> higher pass@1 than ChipMATE-Verilog-9B across all
+                four benchmarks — suggesting that <em>LLMs can readily leverage pre-trained Python priors
+                once they receive targeted fine-tuning on hardware-behavior simulation</em>.
+              </p>
+            </div>
+          </div>
+
+          <div class="results-content" style="margin-top: 60px">
+            <h3 class="subsection-title">Python vs. Verilog Agent</h3>
+            <p class="results-intro">
+              The Python reference-model agent <em>consistently outperforms</em> the Verilog agent. Our
+              multi-agent workflow lifts Verilog generation toward the level of the stronger Python agent
+              — showing that <span class="hl-result">reference-model accuracy sets the upper bound</span>
+              for the entire pipeline.
+            </p>
+            <div class="figure-container">
+              <img
+                src="assets/python_vs_verilog.png"
+                alt="Pass@k of three ChipMATE-4B variants across benchmarks: the Python agent achieves the highest accuracy, the Verilog agent the lowest, and the multi-agent workflow lands between them."
+                class="figure-image"
+                loading="lazy"
+                decoding="async"
+              />
+              <p class="figure-caption">
+                <strong>Pass@k of three <span class="hl-model">ChipMATE-4B</span> variants.</strong> The
+                multi-agent workflow consistently lands <em>between</em> the two single agents, lifting
+                Verilog generation toward the stronger Python agent's level.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ablation" class="content-section">
+        <div class="container">
+          <h2 class="section-title">Ablation &amp; Workflow Exploration</h2>
+
+          <p class="results-intro">
+            We trace the contribution of each technique on <span class="hl-model">VerilogEval v2</span>
+            pass@1, and explore the design space of the agentic workflow by sweeping the per-turn
+            sampling budget and the maximum number of turns.
+          </p>
+
+          <div class="figure-container">
+            <img
+              src="assets/ablation.png"
+              alt="Ablation study on VerilogEval v2 pass@1: SFT yields the largest gain (+19.2% on 4B, +22.0% on 9B); single-agent RL and multi-agent RL contribute a further 1.4–6.5%; multi-agent without backtracking causes an unexpected drop of 11.6–14.3%; introducing backtracking rebounds by 16–18.6%."
+              class="figure-image"
+              loading="lazy"
+              decoding="async"
+            />
+            <p class="figure-caption">
+              <strong>Ablation study on VerilogEval v2 pass@1</strong> &mdash; tracing each technique and
+              training stage. <em>BT</em> = Backtracking. Note the
+              <span class="hl-red">−11.6% drop</span> from naive multi-agent (no BT), and the
+              <span class="hl-result">+16–18.6% rebound</span> once BT is enabled.
+            </p>
+          </div>
+
+          <div class="figure-container">
+            <img
+              src="assets/workflow_heatmap.png"
+              alt="Heatmap of accuracy as a function of per-turn sampling budget N and maximum number of turns T, with peak at N=3 / T=3."
+              class="figure-image"
+              loading="lazy"
+              decoding="async"
+            />
+            <p class="figure-caption">
+              <strong>Workflow design exploration on
+              <span class="hl-model">ChipMATE-4B</span>.</strong> Accuracy does not increase
+              monotonically with either factor; <em>Best-of-3</em> with <em>T = 3</em> achieves the peak
+              (<span class="hl-num">75.6</span> pass@1) at minimal inference cost.
+            </p>
+          </div>
+
+          <div class="results-content" style="margin-top: 60px">
+            <h3 class="subsection-title">Key Findings</h3>
+            <div class="findings-grid">
+              <div class="finding-box success">
+                <h4>SFT Carries the Bulk</h4>
+                <p>
+                  SFT yields the largest gain
+                  (<span class="hl-num">+19.2%</span> on 4B, <span class="hl-num">+22.0%</span> on 9B),
+                  equipping the LLMs with foundational Verilog knowledge. RL then refines.
+                </p>
+              </div>
+              <div class="finding-box success">
+                <h4>Backtrack is the Multi-Agent Linchpin</h4>
+                <p>
+                  Multi-agent without backtracking drops accuracy by
+                  <span class="hl-num">11.6–14.3%</span> due to error compounding. Adding backtrack
+                  rebounds by <span class="hl-num">16–18.6%</span>, surpassing single-agent by
+                  <span class="hl-num">+4.4%</span>.
+                </p>
+              </div>
+              <div class="finding-box success">
+                <h4>Reference Model Sets the Ceiling</h4>
+                <p>
+                  Across all four benchmarks the Python agent achieves
+                  <span class="hl-num">5.4–15.2%</span> higher pass@1 than the Verilog agent. Targeted
+                  Python fine-tuning is <em>more impactful</em> than larger models.
+                </p>
+              </div>
+              <div class="finding-box info">
+                <h4>3 Samples × 3 Turns is Sweet Spot</h4>
+                <p>
+                  Accuracy plateaus at <em>T = 3</em>; larger candidate pools enlarge the cross-verifier's
+                  selection task and lock onto plausible-but-incorrect pairs. <em>Best-of-3 / T=3</em> is
+                  optimal — <em>diminishing returns thereafter</em>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="share" class="content-section bg-light">
+        <div class="container">
+          <h2 class="section-title">Share <strong>ChipMATE</strong></h2>
+          <div class="share-buttons">
+            <a id="share-twitter" href="https://twitter.com/intent/tweet?text=ChipMATE%3A%20Multi-Agent%20Training%20via%20RL%20for%20Enhanced%20RTL%20Generation&url=https%3A%2F%2Fchipmate.picasso-lab.com" class="share-btn twitter" target="_blank" rel="noopener">
+              <svg class="share-svg" aria-hidden="true"><use href="#i-x"/></svg> Share on X
+            </a>
+            <a id="share-linkedin" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fchipmate.picasso-lab.com" class="share-btn linkedin" target="_blank" rel="noopener">
+              <svg class="share-svg" aria-hidden="true"><use href="#i-linkedin"/></svg> Share on LinkedIn
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="container">
+          <p class="footer-note">
+            This website uses a project-page template inspired by
+            <a href="https://nerfies.github.io/" target="_blank" rel="noopener">Nerfies</a>
+            and
+            <a href="https://mathvista.github.io/" target="_blank" rel="noopener">MathVista</a>,
+            licensed under a
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">Creative Commons BY-SA 4.0</a>.
+          </p>
+          <p class="footer-note" style="margin-top: 12px">
+            <strong>Note.</strong> This is an anonymous submission for NeurIPS 2026. Author and
+            institutional information will be made public upon paper acceptance.
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
